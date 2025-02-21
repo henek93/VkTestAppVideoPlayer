@@ -1,4 +1,4 @@
-package com.example.vktestappvideoplayer
+package com.example.vktestappvideoplayer.presentation.main
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
