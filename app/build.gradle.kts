@@ -11,12 +11,13 @@ android {
 
     defaultConfig {
         applicationId = "com.example.vktestappvideoplayer"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -41,52 +42,54 @@ android {
 }
 
 dependencies {
-
+    // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
+    implementation(libs.exoplayer)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // Material 3
+    implementation(libs.androidx.material3)
 
-    //Retrofit
+    // Room
+    implementation(libs.room.core)
+    ksp(libs.room.compiler)
+
+    // Dagger
+    implementation(libs.dagger.core)
+    ksp(libs.dagger.compiler)
+
+    // Retrofit
     implementation(libs.retorfit.core)
     implementation(libs.retorfit.gsonConverter)
     implementation(libs.okhttp.logging.interceptor)
 
-// ExoPlayer для воспроизведения видео
-    implementation(libs.exoplayer)
+    // ExoPlayer
+    implementation(libs.androidx.media3.ui)
 
-//Room
-    implementation(libs.room.core)
-    ksp(libs.room.compiler)
-
-// Dagger Hilt для управления зависимостями
-    implementation(libs.dagger.core)
-    ksp(libs.dagger.compiler)
-
-// SwipeRefreshLayout
+    // SwipeRefreshLayout
     implementation(libs.androidx.swiperefreshlayout)
 
-    //Navigation
+    // Navigation
     implementation(libs.navigation.compose)
 
-    //MaterialIcons
+    // Material Icons
     implementation(libs.icons)
 
-    //Glide
-    implementation(libs.glide.compose)
-
-    //coil
+    // Coil
     implementation(libs.coil.compose)
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+
+    //Shimmer
+    implementation(libs.compose.shimmer)
 }
