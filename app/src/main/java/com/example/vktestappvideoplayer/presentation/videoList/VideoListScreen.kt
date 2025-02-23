@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -54,36 +56,69 @@ fun VideoListScreen(
     video: Video? = null
 ) {
     val viewModel: VideoListViewModel = viewModel(factory = viewModelFactory)
-    val videos by viewModel.videos.collectAsState()
-    val isRefreshing = viewModel.isRefreshing.collectAsState()
-
+    val screenState by viewModel.screenState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        if (videos.isEmpty()) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            VideoList(
-                paddingValues = paddingValues,
-                videos = videos,
-                onVideoClick = { video ->
-                    onVideoClick(video)
-                },
-                isRefreshing = isRefreshing.value,
-                onRefresh = {
-                    viewModel.refreshVideos()
-                },
-                video = video
-            )
+        when (val state = screenState) {
+            is VideoListScreenState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
+            is VideoListScreenState.Success -> {
+                VideoList(
+                    paddingValues = paddingValues,
+                    videos = state.videos,
+                    onVideoClick = onVideoClick,
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refreshVideos() },
+                    video = video
+                )
+            }
+
+            is VideoListScreenState.Error -> {
+                ErrorState(
+                    message = state.message,
+                    onRetry = { viewModel.loadVideos() }
+                )
+            }
+
+            is VideoListScreenState.Refreshing -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
     }
 }
 
+
+@Composable
+fun ErrorState(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message,
+            color = Color.Red,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Button(onClick = onRetry) {
+            Text(text = "Повторить попытку")
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
