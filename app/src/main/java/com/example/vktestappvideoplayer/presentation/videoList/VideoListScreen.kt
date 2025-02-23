@@ -1,13 +1,11 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
-import android.content.Context
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -19,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,7 +50,8 @@ import com.example.vktestappvideoplayer.presentation.main.MainViewModelFactory
 fun VideoListScreen(
     paddingValues: PaddingValues,
     viewModelFactory: MainViewModelFactory,
-    onVideoClick: (String) -> Unit,
+    onVideoClick: (Video) -> Unit,
+    video: Video? = null
 ) {
     val viewModel: VideoListViewModel = viewModel(factory = viewModelFactory)
     val videos by viewModel.videos.collectAsState()
@@ -73,13 +71,14 @@ fun VideoListScreen(
             VideoList(
                 paddingValues = paddingValues,
                 videos = videos,
-                onVideoClick = { videoUrl ->
-                    onVideoClick(videoUrl)
+                onVideoClick = { video ->
+                    onVideoClick(video)
                 },
                 isRefreshing = isRefreshing.value,
                 onRefresh = {
                     viewModel.refreshVideos()
                 },
+                video = video
             )
         }
     }
@@ -91,9 +90,10 @@ fun VideoListScreen(
 fun VideoList(
     paddingValues: PaddingValues,
     videos: List<Video>,
-    onVideoClick: (String) -> Unit,
+    onVideoClick: (Video) -> Unit,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    video: Video?
 ) {
     PullToRefreshBox(
         modifier = Modifier.padding(paddingValues),
@@ -101,8 +101,10 @@ fun VideoList(
         onRefresh = onRefresh,
     ) {
         LazyColumn {
-            items(videos) { video ->
-                VideoItem(video = video, onVideoClick = onVideoClick)
+            items(videos) { currentVideo ->
+                if (video?.id != currentVideo.id) {
+                    VideoItem(video = currentVideo, onVideoClick = onVideoClick)
+                }
             }
         }
     }
@@ -110,14 +112,14 @@ fun VideoList(
 }
 
 @Composable
-fun VideoItem(video: Video, onVideoClick: (String) -> Unit) {
+fun VideoItem(video: Video, onVideoClick: (Video) -> Unit) {
 
     var isImageLoaded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = { onVideoClick(video.videoUrl) })
+            .clickable(onClick = { onVideoClick(video) })
             .padding(vertical = 4.dp)
     ) {
 

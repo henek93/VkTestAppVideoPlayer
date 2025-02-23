@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.vktestappvideoplayer.domain.entity.Video
 
 class NavigationState(
     val navHostController: NavHostController
@@ -17,9 +18,8 @@ class NavigationState(
         }
     }
 
-    fun navigateToVideoPlayer(videoUrl: String){
-        navHostController.navigate(Screen.VideoPlayer.getRouteWithArgs(videoUrl)){
-            launchSingleTop = true
+    fun navigateToVideoPlayer(video: Video) {
+        navHostController.navigate(Screen.VideoPlayer.getRouteWithArgs(video)) {
             restoreState = true
         }
     }

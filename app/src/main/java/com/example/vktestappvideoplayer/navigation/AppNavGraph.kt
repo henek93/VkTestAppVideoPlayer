@@ -1,19 +1,20 @@
 package com.example.vktestappvideoplayer.navigation
 
-import android.net.Uri
+
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
+import com.example.vktestappvideoplayer.domain.entity.Video
+import com.google.gson.Gson
 
 @Composable
 fun AppNavGraph(
     navHostController: NavHostController,
     videoListScreenContent: @Composable () -> Unit,
-    videoPlayerScreenContent: @Composable (String) -> Unit
+    videoPlayerScreenContent: @Composable (Video) -> Unit
 ) {
     NavHost(
         navController = navHostController,
@@ -26,12 +27,16 @@ fun AppNavGraph(
         composable(
             route = Screen.VideoPlayer.route,
             arguments = listOf(
-                navArgument(name = "videoUrl") { type = NavType.StringType }
+                navArgument(name = Screen.KEY_VIDEO) {
+                    type = NavType.StringType
+                }
             )
         ) { backStackEntry ->
-            val videoUrl = backStackEntry.arguments?.getString("videoUrl") ?: ""
-            val decoderUrl = Uri.decode(videoUrl)
-            videoPlayerScreenContent(decoderUrl)
+            val videoJson = backStackEntry.arguments?.getString(Screen.KEY_VIDEO)
+                ?: throw RuntimeException("Args is null")
+            val decodedVideoJson = java.net.URLDecoder.decode(videoJson, "UTF-8")
+            val video = Gson().fromJson(decodedVideoJson, Video::class.java)
+            videoPlayerScreenContent(video)
         }
     }
 }
