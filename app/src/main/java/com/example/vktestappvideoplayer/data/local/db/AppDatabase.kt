@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.vktestappvideoplayer.data.local.model.CachedVideoModel
 
-@Database(entities = [CachedVideoModel::class], version = 2, exportSchema = false)
+@Database(entities = [CachedVideoModel::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun videoDao(): VideoDao

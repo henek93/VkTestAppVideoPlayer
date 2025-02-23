@@ -5,5 +5,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface VideoRepository {
 
-    fun getVideos(): Flow<List<Video>>
+    fun getVideos(page: Int): Flow<List<Video>>
 }

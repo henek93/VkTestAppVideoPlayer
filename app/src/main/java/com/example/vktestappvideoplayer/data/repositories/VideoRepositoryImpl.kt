@@ -23,9 +23,10 @@ class VideoRepositoryImpl(
     private val videoDao: VideoDao = AppDatabase.getInstance(context).videoDao()
     private val mapper = Mapper()
 
-    override fun getVideos(): Flow<List<Video>> = flow {
+    override fun getVideos(page: Int): Flow<List<Video>> = flow {
         try {
-            val remoteVideos = apiService.getPopularVideos().videos.map { mapper.pexelsToVideo(it) }
+            val remoteVideos =
+                apiService.getPopularVideos(page = page).videos.map { mapper.pexelsToVideo(it) }
             videoDao.insertAll(remoteVideos.map { it.toCachedModel() })
             emit(remoteVideos)
         } catch (e: Exception) {
@@ -53,7 +54,8 @@ class VideoRepositoryImpl(
             thumbnailUrl = thumbnailUrl,
             videoUrl = videoUrl,
             title = title,
-            duration = duration
+            duration = duration,
+            authName = authName
         )
     }
 }

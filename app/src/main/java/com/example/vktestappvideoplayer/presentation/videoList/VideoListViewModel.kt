@@ -1,6 +1,8 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
 import android.content.Context
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vktestappvideoplayer.data.repositories.VideoRepositoryImpl
@@ -14,14 +16,17 @@ class VideoListViewModel(context: Context) : ViewModel() {
 
     private val repository = VideoRepositoryImpl(context = context)
     private val getVideosUseCase = GetVideosUseCase(repository)
-    private val API_KEY = "AIzaSyBCRnPxa8ouuJRm70gZUZ7d7-mpyI5q0qc"
+    private var currentPage = 1
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
     private val _videos = MutableStateFlow<List<Video>>(emptyList())
     val videos: StateFlow<List<Video>> = _videos
 
     init {
         viewModelScope.launch {
-            getVideosUseCase().collect { videos ->
+            getVideosUseCase(currentPage).collect { videos ->
                 _videos.value = videos
             }
         }
@@ -29,8 +34,11 @@ class VideoListViewModel(context: Context) : ViewModel() {
 
     fun refreshVideos() {
         viewModelScope.launch {
-            getVideosUseCase().collect { videos ->
+            _isRefreshing.value = true
+            currentPage++
+            getVideosUseCase(currentPage).collect { videos ->
                 _videos.value = videos
+                _isRefreshing.value = false
             }
         }
     }

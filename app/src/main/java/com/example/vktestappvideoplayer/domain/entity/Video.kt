@@ -5,5 +5,6 @@ data class Video(
     val thumbnailUrl: String,
     val videoUrl: String,
     val title: String,
-    val duration: Int
+    val duration: Int,
+    val authName: String
 )

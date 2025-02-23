@@ -77,45 +77,5 @@ fun VideoPlayerScreen(
             },
             modifier = Modifier.fillMaxSize()
         )
-
-//        // Кнопки управления
-//        Column(
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Bottom,
-//            modifier = Modifier
-//                .align(Alignment.BottomCenter)
-//                .padding(bottom = 32.dp)
-//        ) {
-//            IconButton(
-//                onClick = {
-//                    if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
-//                }
-//            ) {
-//                Icon(
-//                    imageVector = if (exoPlayer.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-//                    contentDescription = "Play/Pause"
-//                )
-//            }
-//
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                IconButton(
-//                    onClick = {
-//                        exoPlayer.seekTo(exoPlayer.currentPosition - 10_000) // Перемотка назад на 10 секунд
-//                    }
-//                ) {
-//                    Icon(Icons.Default.Replay10, contentDescription = "Rewind")
-//                }
-//
-//                IconButton(
-//                    onClick = {
-//                        exoPlayer.seekTo(exoPlayer.currentPosition + 10_000) // Перемотка вперед на 10 секунд
-//                    }
-//                ) {
-//                    Icon(Icons.Default.Forward10, contentDescription = "Fast Forward")
-//                }
-//            }
-//        }
     }
 }

@@ -11,7 +11,8 @@ class Mapper {
             thumbnailUrl = pexelsVideo.thumbnailUrl,
             videoUrl = pexelsVideo.videoFiles.firstOrNull()?.link ?: "",
             title = "Video ${pexelsVideo.id}",
-            duration = pexelsVideo.duration
+            duration = pexelsVideo.duration,
+            authName = pexelsVideo.user.name
         )
     }
 
@@ -22,7 +23,8 @@ class Mapper {
             thumbnailUrl = cachedVideoModel.thumbnailUrl,
             videoUrl = cachedVideoModel.videoUrl,
             title = cachedVideoModel.title,
-            duration = cachedVideoModel.duration
+            duration = cachedVideoModel.duration,
+            authName = cachedVideoModel.authName
         )
     }
 }

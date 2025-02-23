@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetVideosUseCase(
     private val repository: VideoRepository
 ) {
-    operator fun invoke(): Flow<List<Video>> {
-        return repository.getVideos()
+    operator fun invoke(page: Int): Flow<List<Video>> {
+        return repository.getVideos(page)
     }
 }
