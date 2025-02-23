@@ -3,45 +3,47 @@ package com.example.vktestappvideoplayer.presentation.main
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.vktestappvideoplayer.ui.theme.VkTestAppVideoPlayerTheme
+import com.example.vktestappvideoplayer.navigation.AppNavGraph
+import com.example.vktestappvideoplayer.navigation.rememberNavigationState
+import com.example.vktestappvideoplayer.presentation.videoList.VideoListScreen
+import com.example.vktestappvideoplayer.presentation.videoList.VideoListViewModel
+import com.example.vktestappvideoplayer.presentation.videoPlayer.VideoPlayerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        val viewModelFactory = MainViewModelFactory(context = this@MainActivity)
+
         setContent {
-            VkTestAppVideoPlayerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+            MaterialTheme {
+                val navigationState = rememberNavigationState()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+
+                    ) { innerPadding ->
+                    AppNavGraph(
+                        navHostController = navigationState.navHostController,
+                        videoListScreenContent = {
+                            VideoListScreen(
+                                viewModel = viewModelFactory.create(VideoListViewModel::class.java),
+                                onVideoClick = { videoUrl ->
+                                    navigationState.navigateToVideoPlayer(videoUrl)
+                                }
+                            )
+                        },
+                        videoPlayerScreenContent = { videoUrl ->
+                            VideoPlayerScreen(
+                                videoUrl = videoUrl,
+                            )
+                        }
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VkTestAppVideoPlayerTheme {
-        Greeting("Android")
     }
 }

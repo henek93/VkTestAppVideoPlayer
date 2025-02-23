@@ -5,8 +5,10 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+
 object ApiFactory {
     private const val BASE_URL = "https://api.pexels.com/v1/"
+    private const val AUTHORIZATION_HEADER = "Authorization"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
@@ -14,6 +16,14 @@ object ApiFactory {
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val originalRequest = chain.request()
+                        val newRequest = originalRequest.newBuilder()
+                            .header(AUTHORIZATION_HEADER, "pkYBlKnRDB8RzGrb11b4YNarnU7LbI4YvfWpEt5LAAQBeQsj6B8yV6wW")
+                            .method(originalRequest.method, originalRequest.body)
+                            .build()
+                        chain.proceed(newRequest)
+                    }
                     .addInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.BODY
                     })

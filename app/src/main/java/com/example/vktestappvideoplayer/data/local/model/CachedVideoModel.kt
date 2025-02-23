@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "videos")
 data class CachedVideoModel(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val id: String,
     val thumbnailUrl: String,
     val videoUrl: String,
     val title: String,

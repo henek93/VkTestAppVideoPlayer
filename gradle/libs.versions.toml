@@ -1,14 +1,15 @@
 [versions]
-agp = "8.8.0"
-exoplayer = "2.19.1"
-kotlin = "2.0.0"
+agp = "8.8.1"
+composeShimmer = "1.0.3"
+exoplayer = "1.5.1"
+kotlin = "2.1.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.0"
-composeBom = "2024.04.01"
+composeBom = "2025.02.00"
 swiperefreshlayout = "1.1.0"
 navigationCompose = "2.8.7"
 # Room
@@ -23,11 +24,14 @@ okhttpLoggingInterceptor = "4.9.3"
 ksp = "2.1.0-1.0.29"
 coil = "2.1.0"
 materialIcons = "1.7.8"
+roomCompilerProcessingTesting = "2.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "exoplayer" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
-exoplayer = { module = "com.google.android.exoplayer:exoplayer", version.ref = "exoplayer" }
+compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
+exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "exoplayer" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -52,6 +56,7 @@ icons = { group = "androidx.compose.material", name = "material-icons-extended",
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 glide-compose = { group = "com.github.bumptech.glide", name = "compose", version.ref = "glide" }
+androidx-room-compiler-processing-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "roomCompilerProcessingTesting" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
