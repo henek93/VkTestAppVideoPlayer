@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.example.vktestappvideoplayer.R
 import com.example.vktestappvideoplayer.navigation.AppNavGraph
 import com.example.vktestappvideoplayer.navigation.rememberNavigationState
+import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 import com.example.vktestappvideoplayer.presentation.videoList.VideoListScreen
 import com.example.vktestappvideoplayer.presentation.videoPlayer.VideoPlayerScreen
 import com.example.vktestappvideoplayer.ui.theme.VkTestAppVideoPlayerTheme
@@ -39,8 +40,6 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val viewModelFactory = MainViewModelFactory(context = this@MainActivity)
 
         setContent {
             val navigationState = rememberNavigationState()
@@ -88,7 +87,6 @@ class MainActivity : ComponentActivity() {
                             showTopAppBar.value = true
                             VideoListScreen(
                                 paddingValues = innerPadding,
-                                viewModelFactory = viewModelFactory,
                                 onVideoClick = { videoUrl ->
                                     navigationState.navigateToVideoPlayer(videoUrl)
                                 },
@@ -98,7 +96,6 @@ class MainActivity : ComponentActivity() {
                             showTopAppBar.value = false
                             VideoPlayerScreen(
                                 video = video,
-                                viewModelFactory = viewModelFactory,
                                 onVideoClick = {
                                     navigationState.navigateToVideoPlayer(it)
                                 }

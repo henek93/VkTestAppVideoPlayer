@@ -46,16 +46,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.vktestappvideoplayer.domain.entity.Video
-import com.example.vktestappvideoplayer.presentation.main.MainViewModelFactory
+import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 
 @Composable
 fun VideoListScreen(
     paddingValues: PaddingValues,
-    viewModelFactory: MainViewModelFactory,
     onVideoClick: (Video) -> Unit,
     video: Video? = null
 ) {
-    val viewModel: VideoListViewModel = viewModel(factory = viewModelFactory)
+    val component = getApplicationComponent()
+    val viewModel: VideoListViewModel = viewModel(factory = component.getViewModelFactory())
     val screenState by viewModel.screenState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 

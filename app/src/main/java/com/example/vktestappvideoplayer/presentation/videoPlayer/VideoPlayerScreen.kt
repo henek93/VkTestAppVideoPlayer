@@ -54,14 +54,12 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.vktestappvideoplayer.data.local.db.VideoCache
 import com.example.vktestappvideoplayer.domain.entity.Video
-import com.example.vktestappvideoplayer.presentation.main.MainViewModelFactory
 import com.example.vktestappvideoplayer.presentation.videoList.VideoListScreen
 
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayerScreen(
     video: Video,
-    viewModelFactory: MainViewModelFactory,
     onVideoClick: (Video) -> Unit
 ) {
     var playbackPosition by rememberSaveable { mutableStateOf(0L) }
@@ -131,7 +129,6 @@ fun VideoPlayerScreen(
         if (!isFullScreen) {
             VideoListScreen(
                 paddingValues = PaddingValues(0.dp),
-                viewModelFactory = viewModelFactory,
                 onVideoClick = {
                     onVideoClick(it)
                 },

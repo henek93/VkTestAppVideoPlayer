@@ -1,15 +1,15 @@
 package com.example.vktestappvideoplayer.presentation.main
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.vktestappvideoplayer.presentation.videoList.VideoListViewModel
+import javax.inject.Inject
+import javax.inject.Provider
 
-class MainViewModelFactory(
-    val context: Context
+class ViewModelFactory @Inject constructor(
+    private val viewModelProviders: @JvmSuppressWildcards Map<Class<out ViewModel>, Provider<ViewModel>>
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return VideoListViewModel(context = context) as T
+        return viewModelProviders[modelClass]?.get() as T
     }
 }

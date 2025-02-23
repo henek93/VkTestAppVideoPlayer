@@ -5,7 +5,7 @@ import com.example.vktestappvideoplayer.domain.repository.VideoRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetVideosUseCase(
+class GetVideosUseCase @Inject constructor(
     private val repository: VideoRepository
 ) {
     operator fun invoke(page: Int): Flow<List<Video>> {
