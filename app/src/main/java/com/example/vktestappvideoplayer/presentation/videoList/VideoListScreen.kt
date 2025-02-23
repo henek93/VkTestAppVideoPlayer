@@ -1,5 +1,6 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -12,7 +13,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +65,9 @@ fun VideoListScreen(
     val viewModel: VideoListViewModel = viewModel(factory = component.getViewModelFactory())
     val screenState by viewModel.screenState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = remember { configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
 
     Box(
         modifier = Modifier
@@ -82,7 +89,8 @@ fun VideoListScreen(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refreshVideos() },
                     onLoadMore = { viewModel.loadMoreVideos() }, // Передаем функцию для подгрузки новых видео
-                    video = video
+                    video = video,
+                    isLandScape = isLandscape
                 )
             }
 
@@ -128,6 +136,7 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
 @Composable
 fun VideoList(
     paddingValues: PaddingValues,
+    isLandScape: Boolean,
     videos: List<Video>,
     onVideoClick: (Video) -> Unit,
     isRefreshing: Boolean,
@@ -157,7 +166,11 @@ fun VideoList(
         ) {
             items(videos) { currentVideo ->
                 if (video?.id != currentVideo.id) {
-                    VideoItem(video = currentVideo, onVideoClick = onVideoClick)
+                    VideoItem(
+                        isLandscape = isLandScape,
+                        video = currentVideo,
+                        onVideoClick = onVideoClick
+                    )
                 }
             }
         }
@@ -166,79 +179,150 @@ fun VideoList(
 }
 
 @Composable
-fun VideoItem(video: Video, onVideoClick: (Video) -> Unit) {
-
+fun VideoItem(
+    video: Video,
+    onVideoClick: (Video) -> Unit,
+    isLandscape: Boolean
+) {
     var isImageLoaded by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = { onVideoClick(video) })
-            .padding(vertical = 4.dp)
-    ) {
-
-        Box(
+    if (isLandscape) {
+        // Ландшафтный макет
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = { onVideoClick(video) })
+                .padding(vertical = 4.dp),
         ) {
-
-
-            if (!isImageLoaded) {
-                ShimmerEffect(modifier = Modifier.matchParentSize())
-            }
-
-            AsyncImage(
-                model = video.thumbnailUrl,
-                contentDescription = "Video Thumbnail",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                onSuccess = {
-                    isImageLoaded = true
-                }
-            )
-
-            // Продолжительность видео
+            // Видео
             Box(
                 modifier = Modifier
-                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                    .align(Alignment.BottomEnd)
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                    .weight(1f)
+                    .aspectRatio(8f / 4f)
+                    .clip(RoundedCornerShape(8.dp))
             ) {
-                Text(
-                    text = "${video.duration / 60}:${video.duration % 60}",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                if (!isImageLoaded) {
+                    ShimmerEffect(modifier = Modifier.matchParentSize())
+                }
+
+                AsyncImage(
+                    model = video.thumbnailUrl,
+                    contentDescription = "Video Thumbnail",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    onSuccess = {
+                        isImageLoaded = true
+                    }
                 )
+
+                // Продолжительность видео
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                        .align(Alignment.BottomEnd)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "${video.duration / 60}:${video.duration % 60}",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
+            // Описание справа от видео
+            Column(
+                modifier = Modifier
+                    .weight(2f)
+                    .padding(start = 8.dp)
+
+            ) {
+                Text(
+                    text = video.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 20.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = video.authName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 14.sp
+                )
+            }
         }
+    } else {
+        // Портретный макет (оставляем без изменений)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = { onVideoClick(video) })
+                .padding(vertical = 4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            ) {
+                if (!isImageLoaded) {
+                    ShimmerEffect(modifier = Modifier.matchParentSize())
+                }
 
-        Spacer(modifier = Modifier.height(8.dp))
+                AsyncImage(
+                    model = video.thumbnailUrl,
+                    contentDescription = "Video Thumbnail",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    onSuccess = {
+                        isImageLoaded = true
+                    }
+                )
 
-        // Заголовок видео
-        Text(
-            modifier = Modifier.padding(start = 4.dp),
-            text = video.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontSize = 16.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
+                // Продолжительность видео
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                        .align(Alignment.BottomEnd)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "${video.duration / 60}:${video.duration % 60}",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-            text = video.authName,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary
-        )
+            // Заголовок видео
+            Text(
+                modifier = Modifier.padding(start = 4.dp),
+                text = video.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontSize = 16.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                text = video.authName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
     }
 }
-
 
 @Composable
 fun ShimmerEffect(modifier: Modifier = Modifier) {
