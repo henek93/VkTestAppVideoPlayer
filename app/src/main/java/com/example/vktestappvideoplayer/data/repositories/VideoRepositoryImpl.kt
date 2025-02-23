@@ -1,27 +1,23 @@
 package com.example.vktestappvideoplayer.data.repositories
 
-import android.content.Context
 import android.util.Log
-import com.example.vktestappvideoplayer.data.local.db.AppDatabase
 import com.example.vktestappvideoplayer.data.local.db.VideoDao
 import com.example.vktestappvideoplayer.data.local.model.CachedVideoModel
 import com.example.vktestappvideoplayer.data.mapper.Mapper
-import com.example.vktestappvideoplayer.data.network.api.ApiFactory
+import com.example.vktestappvideoplayer.data.network.api.PexelsApiService
 import com.example.vktestappvideoplayer.domain.entity.Video
 import com.example.vktestappvideoplayer.domain.repository.VideoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class VideoRepositoryImpl(
-    context: Context
+class VideoRepositoryImpl @Inject constructor(
+    private val apiService: PexelsApiService,
+    private val videoDao: VideoDao,
+    private val mapper: Mapper,
 ) : VideoRepository {
-
-
-    private val apiService = ApiFactory.apiService
-    private val videoDao: VideoDao = AppDatabase.getInstance(context).videoDao()
-    private val mapper = Mapper()
 
     override fun getVideos(page: Int): Flow<List<Video>> = flow {
         try {

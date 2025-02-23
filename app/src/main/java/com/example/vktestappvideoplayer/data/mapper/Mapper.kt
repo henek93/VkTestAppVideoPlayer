@@ -3,8 +3,9 @@ package com.example.vktestappvideoplayer.data.mapper
 import com.example.vktestappvideoplayer.data.local.model.CachedVideoModel
 import com.example.vktestappvideoplayer.data.network.dto.PexelsVideoDto
 import com.example.vktestappvideoplayer.domain.entity.Video
+import javax.inject.Inject
 
-class Mapper {
+class Mapper @Inject constructor() {
     fun pexelsToVideo(pexelsVideo: PexelsVideoDto): Video {
 
         return Video(
