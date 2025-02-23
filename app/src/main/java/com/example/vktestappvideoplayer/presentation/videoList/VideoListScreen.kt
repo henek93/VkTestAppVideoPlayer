@@ -159,6 +159,7 @@ fun VideoItem(video: Video, onVideoClick: (Video) -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
             }
+
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -179,7 +180,7 @@ fun VideoItem(video: Video, onVideoClick: (Video) -> Unit) {
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             text = video.authName,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.secondary
         )
     }
 }
