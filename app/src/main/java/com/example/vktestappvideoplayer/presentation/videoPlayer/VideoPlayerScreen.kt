@@ -246,7 +246,7 @@ fun VideoContainer(
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
                 text = video.authName,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 12.sp
             )
         }
