@@ -6,6 +6,7 @@ import com.example.vktestappvideoplayer.domain.entity.Video
 
 class Mapper {
     fun pexelsToVideo(pexelsVideo: PexelsVideoDto): Video {
+
         return Video(
             id = pexelsVideo.id.toString(),
             thumbnailUrl = pexelsVideo.thumbnailUrl,
