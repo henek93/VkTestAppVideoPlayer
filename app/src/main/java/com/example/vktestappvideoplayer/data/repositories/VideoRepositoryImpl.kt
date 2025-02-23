@@ -1,6 +1,7 @@
 package com.example.vktestappvideoplayer.data.repositories
 
 import android.util.Log
+import coil.network.HttpException
 import com.example.vktestappvideoplayer.data.local.db.VideoDao
 import com.example.vktestappvideoplayer.data.local.model.CachedVideoModel
 import com.example.vktestappvideoplayer.data.mapper.Mapper
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 
 class VideoRepositoryImpl @Inject constructor(
@@ -25,8 +27,9 @@ class VideoRepositoryImpl @Inject constructor(
                 apiService.getPopularVideos(page = page).videos.map { mapper.pexelsToVideo(it) }
             videoDao.insertAll(remoteVideos.map { it.toCachedModel() })
             emit(remoteVideos)
-        } catch (e: Exception) {
-            Log.d("ExceptionInVideoRepository", "Error fetching videos: ${e.message}")
+        } catch (e: IOException) {
+            // Обработка ошибок сети
+            Log.e("NetworkError", "No internet connection: ${e.message}")
             val cachedVideos = videoDao.getAll().map { cachedList ->
                 cachedList.mapNotNull { cachedVideo ->
                     try {
@@ -41,6 +44,14 @@ class VideoRepositoryImpl @Inject constructor(
                 }
             }
             emitAll(cachedVideos)
+        } catch (e: HttpException) {
+            // Обработка ошибок API (например, 404, 500)
+            Log.e("ApiError", "HTTP error: ${e.message}")
+            emit(emptyList())
+        } catch (e: Exception) {
+            // Обработка других ошибок
+            Log.e("UnknownError", "Unexpected error: ${e.message}")
+            emit(emptyList())
         }
     }
 

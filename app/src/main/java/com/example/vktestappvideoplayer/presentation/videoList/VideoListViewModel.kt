@@ -1,16 +1,25 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.network.HttpException
 import com.example.vktestappvideoplayer.domain.entity.Video
 import com.example.vktestappvideoplayer.domain.usecase.GetVideosUseCase
+import com.example.vktestappvideoplayer.presentation.isNetworkAvailable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import okio.IOException
 import javax.inject.Inject
 
 class VideoListViewModel @Inject constructor(
-    private val getVideosUseCase: GetVideosUseCase
+    private val getVideosUseCase: GetVideosUseCase,
+    private val context: Context
 ) : ViewModel() {
     private var currentPage = 1
     private val _screenState = MutableStateFlow<VideoListScreenState>(VideoListScreenState.Loading)
@@ -30,16 +39,26 @@ class VideoListViewModel @Inject constructor(
         viewModelScope.launch {
             _screenState.value = VideoListScreenState.Loading
             try {
-                getVideosUseCase(currentPage).collect {
-                    _videos.value += it // Добавляем новые видео к существующему списку
+                if (!isNetworkAvailable(context = context)) {
+                    _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
+                    return@launch
+                }
+                getVideosUseCase(currentPage).collect { videos ->
+                    _videos.value += videos
                     _screenState.value = VideoListScreenState.Success(_videos.value)
                 }
-
+            } catch (e: IOException) {
+                _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
+            } catch (e: HttpException) {
+                _screenState.value =
+                    VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
             } catch (e: Exception) {
-                _screenState.value = VideoListScreenState.Error(e.message ?: "Unknown error")
+                _screenState.value = VideoListScreenState.Error("Неизвестная ошибка: ${e.message}")
             }
         }
     }
+
+
 
     fun loadMoreVideos() {
         viewModelScope.launch {

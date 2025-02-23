@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +57,10 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.vktestappvideoplayer.data.local.db.VideoCache
 import com.example.vktestappvideoplayer.domain.entity.Video
+import com.example.vktestappvideoplayer.presentation.isNetworkAvailable
+import com.example.vktestappvideoplayer.presentation.videoList.ErrorState
 import com.example.vktestappvideoplayer.presentation.videoList.VideoListScreen
+import kotlinx.coroutines.delay
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -63,16 +69,18 @@ fun VideoPlayerScreen(
     onVideoClick: (Video) -> Unit
 ) {
     var playbackPosition by rememberSaveable { mutableStateOf(0L) }
-    var isPlaying by rememberSaveable { mutableStateOf(true) } // Состояние воспроизведения
+    var isPlaying by rememberSaveable { mutableStateOf(true) }
     var isFullScreen by rememberSaveable { mutableStateOf(false) }
-    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) } // Сообщение об ошибке
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var isLoading by rememberSaveable { mutableStateOf(true) } // Состояние загрузки
+    var showNoInternetMessage by rememberSaveable { mutableStateOf(false) } // Показывать ли сообщение об отсутствии интернета
     val context = LocalContext.current
 
     val cache = remember {
         VideoCache.getCache(context)
     }
 
-    // Инициализация ExoPlayer с кэшированием
+    // Инициализация ExoPlayer
     val exoPlayer = remember {
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(cache)
@@ -88,13 +96,38 @@ fun VideoPlayerScreen(
                 seekTo(playbackPosition)
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
-                        errorMessage = "Ошибка воспроизведения: ${error.message}"
+                        errorMessage = when (error.errorCode) {
+                            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "Ошибка сети. Проверьте подключение к интернету."
+                            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> "Ошибка сервера: ${error.errorCode}"
+                            else -> "Ошибка воспроизведения: ${error.message}"
+                        }
+                    }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        isLoading =
+                            playbackState == Player.STATE_BUFFERING // Обновляем состояние загрузки
+                        if (playbackState == Player.STATE_READY && errorMessage != null) {
+                            isLoading = false
+                            errorMessage = null // Сбрасываем ошибку, если видео загрузилось
+                        }
                     }
                 })
             }
     }
 
-    // Освобождаем ресурсы плеера при уничтожении экрана
+    // Таймер для отслеживания длительной загрузки
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            delay(5000) // Ждем 5 секунд
+            if (isLoading && !isNetworkAvailable(context)) {
+                showNoInternetMessage = true // Показываем сообщение об отсутствии интернета
+            }
+        } else {
+            showNoInternetMessage = false // Сбрасываем сообщение, если загрузка завершена
+        }
+    }
+
+    // Освобождаем ресурсы плеера
     DisposableEffect(Unit) {
         onDispose {
             playbackPosition = exoPlayer.currentPosition
@@ -112,10 +145,12 @@ fun VideoPlayerScreen(
     Column {
         // Отображение ошибки, если она есть
         if (errorMessage != null) {
-            Text(
-                text = errorMessage!!,
-                color = Color.Red,
-                modifier = Modifier.padding(16.dp)
+            ErrorState(
+                message = errorMessage!!,
+                onRetry = {
+                    errorMessage = null // Сбрасываем ошибку
+                    exoPlayer.prepare() // Повторная попытка воспроизведения
+                }
             )
         }
 
@@ -124,14 +159,14 @@ fun VideoPlayerScreen(
             video = video,
             isFullScreen = isFullScreen,
             onFullScreenToggle = { isFullScreen = !isFullScreen },
+            isLoading = isLoading,
+            showNoInternetMessage = showNoInternetMessage
         )
 
         if (!isFullScreen) {
             VideoListScreen(
                 paddingValues = PaddingValues(0.dp),
-                onVideoClick = {
-                    onVideoClick(it)
-                },
+                onVideoClick = { onVideoClick(it) },
                 video = video
             )
         }
@@ -144,6 +179,8 @@ fun VideoPlayer(
     exoPlayer: ExoPlayer,
     isFullScreen: Boolean,
     onFullScreenToggle: () -> Unit,
+    isLoading: Boolean, // Состояние загрузки
+    showNoInternetMessage: Boolean // Показывать ли сообщение об отсутствии интернета
 ) {
     Box(
         modifier = if (isFullScreen) {
@@ -165,7 +202,35 @@ fun VideoPlayer(
             modifier = Modifier.matchParentSize()
         )
 
-        // Продолжительность видео
+        // Индикатор загрузки или сообщение об отсутствии интернета
+        if (isLoading) {
+            if (showNoInternetMessage) {
+                // Сообщение об отсутствии интернета
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Проверьте наличие интернета",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+            } else {
+                // Индикатор загрузки
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(48.dp),
+                    color = Color.White
+                )
+            }
+        }
+
+        // Кнопка полноэкранного режима
         Box(
             modifier = Modifier
                 .size(35.dp)
@@ -186,10 +251,8 @@ fun VideoPlayer(
                 )
             }
         }
-
     }
 }
-
 
 @Composable
 fun VideoContainer(
@@ -197,10 +260,11 @@ fun VideoContainer(
     exoPlayer: ExoPlayer,
     isFullScreen: Boolean,
     onFullScreenToggle: () -> Unit,
+    isLoading: Boolean, // Состояние загрузки
+    showNoInternetMessage: Boolean // Показывать ли сообщение об отсутствии интернета
 ) {
     Column(
-        modifier = Modifier
-            .padding(4.dp),
+        modifier = Modifier.padding(4.dp),
     ) {
         // Анимация перехода между режимами
         AnimatedContent(
@@ -214,12 +278,16 @@ fun VideoContainer(
                     exoPlayer = exoPlayer,
                     isFullScreen = true,
                     onFullScreenToggle = onFullScreenToggle,
+                    isLoading = isLoading,
+                    showNoInternetMessage = showNoInternetMessage
                 )
             } else {
                 VideoPlayer(
                     exoPlayer = exoPlayer,
                     isFullScreen = false,
                     onFullScreenToggle = onFullScreenToggle,
+                    isLoading = isLoading,
+                    showNoInternetMessage = showNoInternetMessage
                 )
             }
         }
