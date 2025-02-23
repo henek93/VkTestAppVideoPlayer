@@ -10,7 +10,7 @@ class Mapper {
             id = pexelsVideo.id.toString(),
             thumbnailUrl = pexelsVideo.thumbnailUrl,
             videoUrl = pexelsVideo.videoFiles.firstOrNull()?.link ?: "",
-            title = "Video ${pexelsVideo.id}",
+            title = "This video was made by ${pexelsVideo.user.name}",
             duration = pexelsVideo.duration,
             authName = pexelsVideo.user.name
         )

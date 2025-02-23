@@ -1,22 +1,33 @@
 package com.example.vktestappvideoplayer.presentation.main
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,14 +48,19 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = MainViewModelFactory(context = this@MainActivity)
 
         setContent {
-            VkTestAppVideoPlayerTheme {
+            val navigationState = rememberNavigationState()
+            val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-                val navigationState = rememberNavigationState()
+            VkTestAppVideoPlayerTheme {
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection),
                     topBar = {
+                        Log.d("RecomposeMainActivity", "Recomopse")
                         TopAppBar(
                             title = {
+                                Log.d("RecomposeMainActivity", "TopAppBar")
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth(),
@@ -65,22 +81,26 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             },
+                            scrollBehavior = scrollBehavior
                         )
                     }
                 ) { innerPadding ->
                     AppNavGraph(
                         navHostController = navigationState.navHostController,
                         videoListScreenContent = {
+                            Log.d("RecomposeMainActivity", "VideoList")
                             VideoListScreen(
                                 paddingValues = innerPadding,
-                                viewModel = viewModelFactory.create(VideoListViewModel::class.java),
+                                viewModelFactory = viewModelFactory,
                                 onVideoClick = { videoUrl ->
                                     navigationState.navigateToVideoPlayer(videoUrl)
-                                }
+                                },
                             )
                         },
                         videoPlayerScreenContent = { videoUrl ->
+                            Log.d("RecomposeMainActivity", "VideoPlayer")
                             VideoPlayerScreen(
+
                                 videoUrl = videoUrl,
                             )
                         }
