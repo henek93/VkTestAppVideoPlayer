@@ -7,7 +7,8 @@ sealed class VideoListScreenState {
 
     object Loading : VideoListScreenState()
 
-    data class Success(val videos: List<Video>) :
+    data class Success(
+        val videos: List<Video>) :
         VideoListScreenState()
 
     data class Error(val message: String) : VideoListScreenState()

@@ -1,10 +1,6 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.network.HttpException
@@ -28,8 +24,7 @@ class VideoListViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
-    private val _videos = MutableStateFlow<List<Video>>(emptyList())
-    val videos: StateFlow<List<Video>> = _videos
+    private val videos = MutableStateFlow<List<Video>>(emptyList())
 
     init {
         loadVideos()
@@ -44,29 +39,43 @@ class VideoListViewModel @Inject constructor(
                     return@launch
                 }
                 getVideosUseCase(currentPage).collect { videos ->
-                    _videos.value += videos
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
+                    if (videos.isEmpty()) {
+                        _screenState.value =
+                            VideoListScreenState.Error("Ошибка подключения к серверу. Попробуйте позже или подключить VPN.")
+                    } else {
+                        this@VideoListViewModel.videos.value += videos
+                        _screenState.value =
+                            VideoListScreenState.Success(this@VideoListViewModel.videos.value)
+                    }
                 }
             } catch (e: IOException) {
                 _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
             } catch (e: HttpException) {
-                _screenState.value =
-                    VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
+                if (e.response.code == 522) {
+                    _screenState.value =
+                        VideoListScreenState.Error("Сервер недоступен. Попробуйте позже или подключить VPN.")
+                } else {
+                    _screenState.value =
+                        VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
+                }
             } catch (e: Exception) {
                 _screenState.value = VideoListScreenState.Error("Неизвестная ошибка: ${e.message}")
             }
         }
     }
 
-
-
     fun loadMoreVideos() {
         viewModelScope.launch {
             try {
                 currentPage++
                 getVideosUseCase(currentPage).collect {
-                    _videos.value += it // Добавляем новые видео к существующему списку
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
+                    if (it.isEmpty()) {
+                        _screenState.value =
+                            VideoListScreenState.Error("Ошибка подключения к серверу. Попробуйте позже или подключить VPN.")
+                    } else {
+                        videos.value += it
+                        _screenState.value = VideoListScreenState.Success(videos.value)
+                    }
                 }
             } catch (e: Exception) {
                 _screenState.value = VideoListScreenState.Error(e.message ?: "Unknown error")
@@ -79,12 +88,16 @@ class VideoListViewModel @Inject constructor(
             _isRefreshing.value = true
             _screenState.value = VideoListScreenState.Refreshing
             try {
-                currentPage = 1 // Сбрасываем страницу
+                currentPage = 1
                 getVideosUseCase(currentPage).collect {
-                    _videos.value = it // Обновляем список видео
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
+                    if (it.isEmpty()) {
+                        _screenState.value =
+                            VideoListScreenState.Error("Ошибка подключения к серверу. Попробуйте позже или подключить VPN.")
+                    } else {
+                        videos.value = it
+                        _screenState.value = VideoListScreenState.Success(videos.value)
+                    }
                 }
-
             } catch (e: Exception) {
                 _screenState.value = VideoListScreenState.Error(e.message ?: "Unknown error")
             } finally {

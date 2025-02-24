@@ -45,9 +45,14 @@ class VideoRepositoryImpl @Inject constructor(
             }
             emitAll(cachedVideos)
         } catch (e: HttpException) {
-            // Обработка ошибок API (например, 404, 500)
-            Log.e("ApiError", "HTTP error: ${e.message}")
-            emit(emptyList())
+            // Обработка ошибок API (например, 404, 500, 522)
+            if (e.response.code == 522) {
+                Log.e("ApiError", "HTTP 522: Connection timed out")
+                emit(emptyList()) // Можно выбросить кастомное исключение или вернуть пустой список
+            } else {
+                Log.e("ApiError", "HTTP error: ${e.message}")
+                emit(emptyList())
+            }
         } catch (e: Exception) {
             // Обработка других ошибок
             Log.e("UnknownError", "Unexpected error: ${e.message}")
@@ -65,4 +70,6 @@ class VideoRepositoryImpl @Inject constructor(
             authName = authName
         )
     }
+
 }
+
