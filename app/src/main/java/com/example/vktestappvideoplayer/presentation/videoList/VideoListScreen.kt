@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -47,12 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.vktestappvideoplayer.domain.entity.Video
+import com.example.vktestappvideoplayer.ui.theme.Constants
 import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 
 @Composable
@@ -64,7 +67,6 @@ fun VideoListScreen(
     val component = getApplicationComponent()
     val viewModel: VideoListViewModel = viewModel(factory = component.getViewModelFactory())
     val screenState by viewModel.screenState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val configuration = LocalConfiguration.current
     val isLandscape = remember { configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
@@ -75,10 +77,8 @@ fun VideoListScreen(
             .padding(16.dp)
     ) {
         when (val state = screenState) {
-            is VideoListScreenState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+            is VideoListScreenState.Loading, is VideoListScreenState.Refreshing -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
 
             is VideoListScreenState.Success -> {
@@ -86,9 +86,9 @@ fun VideoListScreen(
                     paddingValues = paddingValues,
                     videos = state.videos,
                     onVideoClick = onVideoClick,
-                    isRefreshing = isRefreshing,
+                    isRefreshing = state.isRefreshing,
                     onRefresh = { viewModel.refreshVideos() },
-                    onLoadMore = { viewModel.loadMoreVideos() }, // Передаем функцию для подгрузки новых видео
+                    onLoadMore = { viewModel.loadMoreVideos() },
                     video = video,
                     isLandScape = isLandscape
                 )
@@ -100,16 +100,9 @@ fun VideoListScreen(
                     onRetry = { viewModel.loadVideos() }
                 )
             }
-
-            is VideoListScreenState.Refreshing -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
         }
     }
 }
-
 
 @Composable
 fun ErrorState(message: String, onRetry: () -> Unit) {
@@ -124,7 +117,8 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
             text = message,
             color = Color.Red,
             fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
         )
         Button(onClick = onRetry) {
             Text(text = "Повторить попытку")
@@ -146,12 +140,11 @@ fun VideoList(
 ) {
     val lazyListState = rememberLazyListState()
 
-    // Определяем, когда пользователь доскролил до конца списка
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
             .collect { visibleItems ->
                 if (visibleItems.isNotEmpty() && visibleItems.last().index >= videos.size - 1) {
-                    onLoadMore() // Вызываем функцию для подгрузки новых видео
+                    onLoadMore()
                 }
             }
     }
@@ -161,9 +154,7 @@ fun VideoList(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
     ) {
-        LazyColumn(
-            state = lazyListState
-        ) {
+        LazyColumn(state = lazyListState) {
             items(videos) { currentVideo ->
                 if (video?.id != currentVideo.id) {
                     VideoItem(
@@ -175,7 +166,6 @@ fun VideoList(
             }
         }
     }
-
 }
 
 @Composable
@@ -187,141 +177,130 @@ fun VideoItem(
     var isImageLoaded by remember { mutableStateOf(false) }
 
     if (isLandscape) {
-        // Ландшафтный макет
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = { onVideoClick(video) })
-                .padding(vertical = 4.dp),
-        ) {
-            // Видео
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(8f / 4f)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                if (!isImageLoaded) {
-                    ShimmerEffect(modifier = Modifier.matchParentSize())
-                }
-
-                AsyncImage(
-                    model = video.thumbnailUrl,
-                    contentDescription = "Video Thumbnail",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    onSuccess = {
-                        isImageLoaded = true
-                    }
-                )
-
-                // Продолжительность видео
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                        .align(Alignment.BottomEnd)
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "${video.duration / 60}:${video.duration % 60}",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            // Описание справа от видео
-            Column(
-                modifier = Modifier
-                    .weight(2f)
-                    .padding(start = 8.dp)
-
-            ) {
-                Text(
-                    text = video.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontSize = 20.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = video.authName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 14.sp
-                )
-            }
-        }
+        LandscapeVideoItem(video, onVideoClick, isImageLoaded) { isImageLoaded = true }
     } else {
-        // Портретный макет (оставляем без изменений)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = { onVideoClick(video) })
-                .padding(vertical = 4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                if (!isImageLoaded) {
-                    ShimmerEffect(modifier = Modifier.matchParentSize())
-                }
-
-                AsyncImage(
-                    model = video.thumbnailUrl,
-                    contentDescription = "Video Thumbnail",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    onSuccess = {
-                        isImageLoaded = true
-                    }
-                )
-
-                // Продолжительность видео
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                        .align(Alignment.BottomEnd)
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "${video.duration / 60}:${video.duration % 60}",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Заголовок видео
-            Text(
-                modifier = Modifier.padding(start = 4.dp),
-                text = video.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = 16.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-                text = video.authName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
+        PortraitVideoItem(video, onVideoClick, isImageLoaded) { isImageLoaded = true }
     }
+}
+
+@Composable
+private fun LandscapeVideoItem(
+    video: Video,
+    onVideoClick: (Video) -> Unit,
+    isImageLoaded: Boolean,
+    onImageLoaded: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = { onVideoClick(video) })
+            .padding(vertical = 4.dp),
+    ) {
+        VideoThumbnail(video, isImageLoaded, onImageLoaded, Modifier.weight(1f))
+        VideoDescription(video, Modifier.weight(2f))
+    }
+}
+
+@Composable
+private fun PortraitVideoItem(
+    video: Video,
+    onVideoClick: (Video) -> Unit,
+    isImageLoaded: Boolean,
+    onImageLoaded: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = { onVideoClick(video) })
+            .padding(vertical = 4.dp)
+    ) {
+        VideoThumbnail(
+            video,
+            isImageLoaded,
+            onImageLoaded,
+            Modifier
+                .fillMaxWidth()
+                .height(Constants.VIDEO_THUMBNAIL_HEIGHT)
+        )
+        VideoTitle(video)
+        VideoAuthor(video)
+    }
+}
+
+@Composable
+private fun VideoThumbnail(
+    video: Video,
+    isImageLoaded: Boolean,
+    onImageLoaded: () -> Unit,
+    modifier: Modifier
+) {
+    Box(modifier = modifier
+        .aspectRatio(8f / 4f)
+        .clip(RoundedCornerShape(8.dp))) {
+        if (!isImageLoaded) {
+            ShimmerEffect(modifier = Modifier.matchParentSize())
+        }
+
+        AsyncImage(
+            model = video.thumbnailUrl,
+            contentDescription = "Video Thumbnail",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            onSuccess = { onImageLoaded() }
+        )
+
+        VideoDuration(video.duration)
+    }
+}
+
+@Composable
+private fun BoxScope.VideoDuration(duration: Int) {
+    Box(
+        modifier = Modifier
+            .background(
+                Color.Black.copy(alpha = 0.6f),
+                RoundedCornerShape(Constants.VIDEO_DURATION_CORNER_RADIUS)
+            )
+            .align(Alignment.BottomEnd)
+            .padding(horizontal = Constants.VIDEO_DURATION_PADDING, vertical = 4.dp)
+    ) {
+        Text(
+            text = "${duration / 60}:${duration % 60}",
+            color = Color.White,
+            fontSize = Constants.VIDEO_DURATION_TEXT_SIZE,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun VideoDescription(video: Video, modifier: Modifier) {
+    Column(modifier = modifier.padding(start = 8.dp)) {
+        VideoTitle(video)
+        Spacer(modifier = Modifier.height(4.dp))
+        VideoAuthor(video)
+    }
+}
+
+@Composable
+private fun VideoTitle(video: Video) {
+    Text(
+        text = video.title,
+        style = MaterialTheme.typography.titleMedium,
+        fontSize = Constants.VIDEO_TITLE_TEXT_SIZE,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+private fun VideoAuthor(video: Video) {
+    Text(
+        text = video.authName,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.secondary,
+        fontSize = Constants.VIDEO_AUTHOR_TEXT_SIZE
+    )
 }
 
 @Composable

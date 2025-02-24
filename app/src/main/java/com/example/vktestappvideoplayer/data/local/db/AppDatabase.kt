@@ -6,16 +6,27 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.vktestappvideoplayer.data.local.model.CachedVideoModel
 
+/**
+ * Room Database для хранения данных о видео.
+ *
+ * Используется для работы с локальной базой данных, которая хранит информацию о видео.
+ * База данных создается с использованием Room и поддерживает миграции.
+ *
+ * @see RoomDatabase
+ *
+ * @property videoDao DAO для работы с таблицей видео.
+ *
+ */
 @Database(entities = [CachedVideoModel::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun videoDao(): VideoDao
 
     companion object {
-
         private const val DB_NAME = "FavouriteDatabase"
         private var INSTANCE: AppDatabase? = null
         private val LOCK = Any()
+
 
         fun getInstance(context: Context): AppDatabase {
             INSTANCE?.let { return it }

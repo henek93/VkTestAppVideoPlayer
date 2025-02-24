@@ -1,10 +1,6 @@
 package com.example.vktestappvideoplayer.presentation.videoList
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.network.HttpException
@@ -25,11 +21,7 @@ class VideoListViewModel @Inject constructor(
     private val _screenState = MutableStateFlow<VideoListScreenState>(VideoListScreenState.Loading)
     val screenState: StateFlow<VideoListScreenState> = _screenState
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing
-
-    private val _videos = MutableStateFlow<List<Video>>(emptyList())
-    val videos: StateFlow<List<Video>> = _videos
+    private val videos = MutableStateFlow<List<Video>>(emptyList())
 
     init {
         loadVideos()
@@ -38,58 +30,59 @@ class VideoListViewModel @Inject constructor(
     fun loadVideos() {
         viewModelScope.launch {
             _screenState.value = VideoListScreenState.Loading
-            try {
-                if (!isNetworkAvailable(context = context)) {
-                    _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
-                    return@launch
-                }
-                getVideosUseCase(currentPage).collect { videos ->
-                    _videos.value += videos
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
-                }
-            } catch (e: IOException) {
-                _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
-            } catch (e: HttpException) {
-                _screenState.value =
-                    VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
-            } catch (e: Exception) {
-                _screenState.value = VideoListScreenState.Error("Неизвестная ошибка: ${e.message}")
-            }
+            fetchVideos()
         }
     }
 
-
-
     fun loadMoreVideos() {
         viewModelScope.launch {
-            try {
-                currentPage++
-                getVideosUseCase(currentPage).collect {
-                    _videos.value += it // Добавляем новые видео к существующему списку
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
-                }
-            } catch (e: Exception) {
-                _screenState.value = VideoListScreenState.Error(e.message ?: "Unknown error")
-            }
+            currentPage++
+            fetchVideos()
         }
     }
 
     fun refreshVideos() {
         viewModelScope.launch {
-            _isRefreshing.value = true
             _screenState.value = VideoListScreenState.Refreshing
-            try {
-                currentPage = 1 // Сбрасываем страницу
-                getVideosUseCase(currentPage).collect {
-                    _videos.value = it // Обновляем список видео
-                    _screenState.value = VideoListScreenState.Success(_videos.value)
-                }
+            currentPage = 1
+            fetchVideos()
+        }
+    }
 
-            } catch (e: Exception) {
-                _screenState.value = VideoListScreenState.Error(e.message ?: "Unknown error")
-            } finally {
-                _isRefreshing.value = false
+    private suspend fun fetchVideos() {
+        try {
+            if (!isNetworkAvailable(context = context)) {
+                _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
+                return
             }
+
+            getVideosUseCase(currentPage).collect { newVideos ->
+                if (newVideos.isEmpty()) {
+                    _screenState.value = VideoListScreenState.Error(
+                        "Ошибка подключения к серверу. Попробуйте позже или подключить VPN."
+                    )
+                } else {
+                    if (currentPage == 1) {
+                        videos.value = newVideos
+                    } else {
+                        videos.value += newVideos
+                    }
+                    _screenState.value = VideoListScreenState.Success(videos.value)
+                }
+            }
+        } catch (e: IOException) {
+            _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
+        } catch (e: HttpException) {
+            if (e.response.code == 522) {
+                _screenState.value = VideoListScreenState.Error(
+                    "Сервер недоступен. Попробуйте позже или подключить VPN."
+                )
+            } else {
+                _screenState.value =
+                    VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
+            }
+        } catch (e: Exception) {
+            _screenState.value = VideoListScreenState.Error("Неизвестная ошибка: ${e.message}")
         }
     }
 }
