@@ -17,6 +17,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -31,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.example.vktestappvideoplayer.R
 import com.example.vktestappvideoplayer.navigation.AppNavGraph
 import com.example.vktestappvideoplayer.navigation.rememberNavigationState
-import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 import com.example.vktestappvideoplayer.presentation.videoList.VideoListScreen
 import com.example.vktestappvideoplayer.presentation.videoPlayer.VideoPlayerScreen
 import com.example.vktestappvideoplayer.ui.theme.VkTestAppVideoPlayerTheme
@@ -53,31 +54,7 @@ class MainActivity : ComponentActivity() {
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
                     topBar = {
                         if (showTopAppBar.value) {
-                            TopAppBar(
-                                title = {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_logo),
-                                            contentDescription = "Logo",
-                                            tint = Color(0xFFFF0000)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = stringResource(R.string.newtube),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = 30.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                },
-                                scrollBehavior = scrollBehavior,
-                            )
+                            CustomTopAppBar(scrollBehavior = scrollBehavior)
                         }
                     }
                 ) { innerPadding ->
@@ -106,4 +83,36 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomTopAppBar(
+    scrollBehavior: TopAppBarScrollBehavior
+) {
+    TopAppBar(
+        title = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_logo),
+                    contentDescription = "Logo",
+                    tint = Color(0xFFFF0000)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = stringResource(R.string.newtube),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        scrollBehavior = scrollBehavior,
+    )
 }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,8 +55,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.vktestappvideoplayer.domain.entity.Video
-import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 import com.example.vktestappvideoplayer.ui.theme.Constants
+import com.example.vktestappvideoplayer.presentation.getApplicationComponent
 
 @Composable
 fun VideoListScreen(
@@ -233,7 +234,9 @@ private fun VideoThumbnail(
     onImageLoaded: () -> Unit,
     modifier: Modifier
 ) {
-    Box(modifier = modifier.clip(RoundedCornerShape(8.dp))) {
+    Box(modifier = modifier
+        .aspectRatio(8f / 4f)
+        .clip(RoundedCornerShape(8.dp))) {
         if (!isImageLoaded) {
             ShimmerEffect(modifier = Modifier.matchParentSize())
         }
