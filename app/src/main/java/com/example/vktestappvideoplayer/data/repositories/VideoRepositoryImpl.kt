@@ -15,51 +15,39 @@ import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 
+/**
+ * Implements video data retrieval from network and cache.
+ */
 class VideoRepositoryImpl @Inject constructor(
     private val apiService: PexelsApiService,
     private val videoDao: VideoDao,
     private val mapper: Mapper,
 ) : VideoRepository {
 
+    /**
+     * Fetches videos from the network or cache, emitting them as a Flow.
+     */
     override fun getVideos(page: Int): Flow<List<Video>> = flow {
         try {
-            val remoteVideos =
-                apiService.getPopularVideos(page = page).videos.map { mapper.pexelsToVideo(it) }
+            val remoteVideos = apiService.getPopularVideos(page = page)
+                .videos.map { mapper.pexelsToVideo(it) }
             videoDao.insertAll(remoteVideos.map { it.toCachedModel() })
             emit(remoteVideos)
         } catch (e: IOException) {
-            // Обработка ошибок сети
-            Log.e("NetworkError", "No internet connection: ${e.message}")
-            val cachedVideos = videoDao.getAll().map { cachedList ->
-                cachedList.mapNotNull { cachedVideo ->
-                    try {
-                        mapper.cachedToVideo(cachedVideo)
-                    } catch (mappingException: Exception) {
-                        Log.e(
-                            "MapperError",
-                            "Failed to map cached video: ${mappingException.message}"
-                        )
-                        null
-                    }
-                }
-            }
-            emitAll(cachedVideos)
+            Log.e("NetworkError", "No internet: ${e.message}")
+            emitAll(videoDao.getAll().map { it.map { mapper.cachedToVideo(it) } })
         } catch (e: HttpException) {
-            // Обработка ошибок API (например, 404, 500, 522)
-            if (e.response.code == 522) {
-                Log.e("ApiError", "HTTP 522: Connection timed out")
-                emit(emptyList()) // Можно выбросить кастомное исключение или вернуть пустой список
-            } else {
-                Log.e("ApiError", "HTTP error: ${e.message}")
-                emit(emptyList())
-            }
+            Log.e("ApiError", "HTTP error ${e.response.code}: ${e.message}")
+            emit(emptyList())
         } catch (e: Exception) {
-            // Обработка других ошибок
-            Log.e("UnknownError", "Unexpected error: ${e.message}")
+            Log.e("UnknownError", "Unexpected: ${e.message}")
             emit(emptyList())
         }
     }
 
+    /**
+     * Converts a domain Video to a cached model.
+     */
     private fun Video.toCachedModel(): CachedVideoModel {
         return CachedVideoModel(
             id = id,
@@ -70,6 +58,4 @@ class VideoRepositoryImpl @Inject constructor(
             authName = authName
         )
     }
-
 }
-

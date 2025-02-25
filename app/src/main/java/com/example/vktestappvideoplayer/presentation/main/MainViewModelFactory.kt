@@ -5,11 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import javax.inject.Inject
 import javax.inject.Provider
 
+/**
+ * Factory for creating ViewModels with Dagger.
+ */
 class ViewModelFactory @Inject constructor(
-    private val viewModelProviders: @JvmSuppressWildcards Map<Class<out ViewModel>, Provider<ViewModel>>
+    private val providers: Map<Class<out ViewModel>, @JvmSuppressWildcards Provider<ViewModel>>
 ) : ViewModelProvider.Factory {
-
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return viewModelProviders[modelClass]?.get() as T
-    }
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        providers[modelClass]?.get() as T ?: throw IllegalArgumentException("Unknown ViewModel: $modelClass")
 }
