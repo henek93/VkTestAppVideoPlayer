@@ -5,9 +5,14 @@ import com.example.vktestappvideoplayer.data.network.dto.PexelsVideoDto
 import com.example.vktestappvideoplayer.domain.entity.Video
 import javax.inject.Inject
 
+/**
+ * Maps video data between different layers.
+ */
 class Mapper @Inject constructor() {
+    /**
+     * Converts a Pexels DTO to a domain Video entity.
+     */
     fun pexelsToVideo(pexelsVideo: PexelsVideoDto): Video {
-
         return Video(
             id = pexelsVideo.id.toString(),
             thumbnailUrl = pexelsVideo.thumbnailUrl,
@@ -18,7 +23,9 @@ class Mapper @Inject constructor() {
         )
     }
 
-
+    /**
+     * Converts a cached video to a domain Video entity.
+     */
     fun cachedToVideo(cachedVideoModel: CachedVideoModel): Video {
         return Video(
             id = cachedVideoModel.id,

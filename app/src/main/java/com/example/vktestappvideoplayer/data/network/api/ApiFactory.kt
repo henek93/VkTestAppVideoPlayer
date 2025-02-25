@@ -5,7 +5,9 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-
+/**
+ * Provides a Retrofit instance for API calls.
+ */
 object ApiFactory {
     private const val BASE_URL = "https://api.pexels.com/v1/"
     private const val AUTHORIZATION_HEADER = "Authorization"
@@ -32,6 +34,9 @@ object ApiFactory {
             .build()
     }
 
+    /**
+     * Provides the Pexels API service instance.
+     */
     val apiService: PexelsApiService by lazy {
         retrofit.create(PexelsApiService::class.java)
     }

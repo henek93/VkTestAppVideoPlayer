@@ -3,16 +3,18 @@ package com.example.vktestappvideoplayer.presentation.videoList
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil.network.HttpException
 import com.example.vktestappvideoplayer.domain.entity.Video
 import com.example.vktestappvideoplayer.domain.usecase.GetVideosUseCase
 import com.example.vktestappvideoplayer.presentation.isNetworkAvailable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import okio.IOException
 import javax.inject.Inject
 
+/**
+ * Manages video list data and state.
+ */
 class VideoListViewModel @Inject constructor(
     private val getVideosUseCase: GetVideosUseCase,
     private val context: Context
@@ -20,69 +22,51 @@ class VideoListViewModel @Inject constructor(
     private var currentPage = 1
     private val _screenState = MutableStateFlow<VideoListScreenState>(VideoListScreenState.Loading)
     val screenState: StateFlow<VideoListScreenState> = _screenState
-
-    private val videos = MutableStateFlow<List<Video>>(emptyList())
+    private val videos = mutableListOf<Video>()
 
     init {
         loadVideos()
     }
 
-    fun loadVideos() {
-        viewModelScope.launch {
-            _screenState.value = VideoListScreenState.Loading
-            fetchVideos()
-        }
+    fun loadVideos() = viewModelScope.launch {
+        _screenState.value = VideoListScreenState.Loading
+        fetchVideos()
     }
 
-    fun loadMoreVideos() {
-        viewModelScope.launch {
-            currentPage++
-            fetchVideos()
-        }
+    fun loadMoreVideos() = viewModelScope.launch {
+        currentPage++
+        fetchVideos()
     }
 
-    fun refreshVideos() {
-        viewModelScope.launch {
-            _screenState.value = VideoListScreenState.Refreshing
-            currentPage = 1
-            fetchVideos()
-        }
+    fun refreshVideos() = viewModelScope.launch {
+        _screenState.value = VideoListScreenState.Refreshing
+        currentPage = 1
+        videos.clear()
+        fetchVideos()
     }
 
     private suspend fun fetchVideos() {
-        try {
-            if (!isNetworkAvailable(context = context)) {
-                _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
-                return
-            }
-
-            getVideosUseCase(currentPage).collect { newVideos ->
-                if (newVideos.isEmpty()) {
-                    _screenState.value = VideoListScreenState.Error(
-                        "Ошибка подключения к серверу. Попробуйте позже или подключить VPN."
-                    )
+        if (!isNetworkAvailable(context)) {
+            _screenState.value = VideoListScreenState.Error("No internet connection")
+            return
+        }
+        getVideosUseCase(currentPage)
+            .catch { handleError(it) }
+            .collect { newVideos ->
+                if (newVideos.isEmpty() && currentPage == 1) {
+                    _screenState.value = VideoListScreenState.Error("Server unavailable")
                 } else {
-                    if (currentPage == 1) {
-                        videos.value = newVideos
-                    } else {
-                        videos.value += newVideos
-                    }
-                    _screenState.value = VideoListScreenState.Success(videos.value)
+                    videos.addAll(newVideos)
+                    _screenState.value = VideoListScreenState.Success(videos.toList())
                 }
             }
-        } catch (e: IOException) {
-            _screenState.value = VideoListScreenState.Error("Нет подключения к интернету")
-        } catch (e: HttpException) {
-            if (e.response.code == 522) {
-                _screenState.value = VideoListScreenState.Error(
-                    "Сервер недоступен. Попробуйте позже или подключить VPN."
-                )
-            } else {
-                _screenState.value =
-                    VideoListScreenState.Error("Ошибка сервера: ${e.response.code}")
-            }
-        } catch (e: Exception) {
-            _screenState.value = VideoListScreenState.Error("Неизвестная ошибка: ${e.message}")
+    }
+
+    private fun handleError(e: Throwable) {
+        _screenState.value = when (e) {
+            is java.io.IOException -> VideoListScreenState.Error("No internet")
+            is coil.network.HttpException -> VideoListScreenState.Error("Server error: ${e.response.code}")
+            else -> VideoListScreenState.Error("Unknown error")
         }
     }
 }

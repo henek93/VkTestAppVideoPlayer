@@ -1,6 +1,8 @@
 package com.example.vktestappvideoplayer.domain.entity
 
-
+/**
+ * Represents a video entity in the domain layer.
+ */
 data class Video(
     val id: String,
     val thumbnailUrl: String,
